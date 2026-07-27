@@ -49,19 +49,19 @@ export function useFavorites() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '登録に失敗しました');
     
-    await fetchFavorites(); // リスト再取得
+    setFavorites(prev => [...prev, data.favorite]);
     return data.favorite;
   };
 
   const deleteFavorite = async (id: string) => {
-    const res = await fetch(`/api/favorites?id=${id}`, {
+    const res = await fetch(`/api/favorites?id=${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '削除に失敗しました');
 
-    await fetchFavorites(); // リスト再取得
+    setFavorites(prev => prev.filter(f => f.id !== id));
   };
 
   return {

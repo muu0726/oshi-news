@@ -10,7 +10,7 @@ import { FavoriteTabs } from '@/components/FavoriteTabs';
 import { NewsCard } from '@/components/NewsCard';
 import { EmptyNewsState } from '@/components/EmptyNewsState';
 import { AddFavoriteModal } from '@/components/AddFavoriteModal';
-import { Sparkles, LogOut, Plus, RefreshCw, CheckCircle2, AlertCircle, Bookmark } from 'lucide-react';
+import { Sparkles, LogOut, Plus, RefreshCw, CheckCircle2, AlertCircle, Bookmark, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
@@ -64,17 +64,6 @@ export default function DashboardPage() {
     showToast(`「${candidate.name}」を推しリストに追加しました！`);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (confirm(`「${name}」を推しリストから削除してもよろしいですか？`)) {
-      await deleteFavorite(id);
-      if (activeTabId === id) {
-        const remaining = favorites.filter(f => f.id !== id);
-        setActiveTabId(remaining.length > 0 ? remaining[0].id : null);
-      }
-      showToast(`「${name}」を削除しました`);
-    }
-  };
-
   // 手動ニュース同期・取得バッチの実行
   const handleManualSync = async () => {
     setIsCronRunning(true);
@@ -117,11 +106,11 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* 「後で見る」リンク */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* 「後で見る」ボタン */}
             <Link
               href="/bookmarks"
-              className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs px-3.5 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-amber-200 shadow-2xs relative"
+              className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs px-3 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-amber-200 shadow-2xs relative"
               title="後で見るリストを開く"
             >
               <Bookmark className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
@@ -133,21 +122,31 @@ export default function DashboardPage() {
               )}
             </Link>
 
+            {/* 「推しの管理」ボタン */}
+            <Link
+              href="/manage"
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-slate-200 shadow-2xs"
+              title="推しの管理画面を開く"
+            >
+              <Settings className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">推しの管理</span>
+            </Link>
+
             {favorites.length > 0 && (
               <button
                 onClick={handleManualSync}
                 disabled={isCronRunning}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3.5 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-slate-200 shadow-2xs disabled:opacity-50 cursor-pointer"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs p-2.5 sm:px-3 sm:py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-slate-200 shadow-2xs disabled:opacity-50 cursor-pointer"
                 title="ニュースを今すぐ手動集約"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isCronRunning ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
-                <span className="hidden sm:inline">今すぐAIニュース同期</span>
+                <span className="hidden sm:inline">AIニュース同期</span>
               </button>
             )}
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">推しを追加</span>
@@ -155,7 +154,7 @@ export default function DashboardPage() {
 
             <button
               onClick={signOut}
-              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 p-2.5 sm:px-3.5 sm:py-2.5 rounded-2xl border border-slate-200 transition-all cursor-pointer"
+              className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 p-2.5 sm:px-3 sm:py-2.5 rounded-2xl border border-slate-200 transition-all cursor-pointer"
               title="ログアウト"
             >
               <LogOut className="w-4 h-4 text-slate-500" />
@@ -171,7 +170,6 @@ export default function DashboardPage() {
           activeId={activeTabId}
           onSelectTab={(id) => setActiveTabId(id)}
           onOpenAddModal={() => setIsModalOpen(true)}
-          onDeleteFavorite={handleDelete}
         />
       )}
 
