@@ -1,7 +1,7 @@
 'use client';
 
 import { NewsItem } from '@/types/database';
-import { Sparkles, ExternalLink, Clock, Newspaper } from 'lucide-react';
+import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight } from 'lucide-react';
 
 interface NewsCardProps {
   news: NewsItem;
@@ -32,39 +32,44 @@ export function NewsCard({ news }: NewsCardProps) {
   };
 
   return (
-    <article className="bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-5 sm:p-6 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/5 group flex flex-col justify-between">
+    <article className="glass-panel-interactive rounded-[28px] p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
+      {/* 背景ホバー微細グラデーション */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
       <div>
         {/* 出典 ＆ 日時 */}
-        <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-          <div className="flex items-center gap-1.5 font-medium bg-slate-800/80 text-slate-300 px-2.5 py-1 rounded-lg">
+        <div className="flex items-center justify-between text-xs mb-4">
+          <div className="flex items-center gap-2 bg-slate-900/80 border border-white/10 text-slate-300 px-3 py-1.5 rounded-xl font-medium shadow-sm">
             <Newspaper className="w-3.5 h-3.5 text-blue-400" />
             <span>{news.source || '主要メディア'}</span>
           </div>
 
-          <div className="flex items-center gap-1 text-slate-500">
-            <Clock className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+            <Clock className="w-3.5 h-3.5 text-slate-500" />
             <span>{formatDate(news.published_at || news.created_at)}</span>
           </div>
         </div>
 
         {/* ニュースタイトル */}
-        <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-400 transition-colors leading-snug">
+        <h3 className="text-lg sm:text-xl font-extrabold text-white group-hover:text-blue-300 transition-colors leading-snug tracking-tight">
           <a href={news.url} target="_blank" rel="noreferrer" className="focus:outline-none">
             {news.title}
           </a>
         </h3>
 
-        {/* AI 3行要約セクション */}
-        <div className="mt-4 p-4 bg-slate-950/70 border border-slate-800/80 rounded-2xl relative overflow-hidden">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-blue-400 mb-2.5">
-            <Sparkles className="w-4 h-4 text-blue-400" />
-            <span>AI 3行サマリー</span>
+        {/* AI 3行要約セクション (特製ハイライトボックス) */}
+        <div className="mt-5 p-4 sm:p-5 bg-[#0b101d]/90 border-l-4 border-l-blue-500 border border-white/5 rounded-2xl relative shadow-inner">
+          <div className="flex items-center justify-between mb-3">
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 text-blue-300 px-3 py-1 rounded-full shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+              <span>AI 3行サマリー</span>
+            </div>
           </div>
 
-          <ul className="space-y-2 text-xs sm:text-sm text-slate-300 leading-relaxed">
+          <ul className="space-y-2.5 text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
             {summaryLines.map((line, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0 mt-2" />
+              <li key={idx} className="flex items-start gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 shrink-0 mt-2 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
                 <span>{line}</span>
               </li>
             ))}
@@ -73,15 +78,15 @@ export function NewsCard({ news }: NewsCardProps) {
       </div>
 
       {/* 外部記事へのリンクボタン */}
-      <div className="mt-5 pt-4 border-t border-slate-800/60 flex justify-end">
+      <div className="mt-6 pt-4 border-t border-white/5 flex justify-end">
         <a
           href={news.url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl transition-all"
+          className="group/btn inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-4 py-2.5 rounded-xl shadow-md shadow-blue-500/20 transition-all duration-300 cursor-pointer"
         >
           <span>元記事を読む</span>
-          <ExternalLink className="w-3.5 h-3.5" />
+          <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
         </a>
       </div>
     </article>
