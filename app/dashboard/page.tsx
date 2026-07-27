@@ -5,15 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useNews } from '@/hooks/useNews';
+import { useBookmarks } from '@/hooks/useBookmarks';
 import { FavoriteTabs } from '@/components/FavoriteTabs';
 import { NewsCard } from '@/components/NewsCard';
 import { EmptyNewsState } from '@/components/EmptyNewsState';
 import { AddFavoriteModal } from '@/components/AddFavoriteModal';
-import { Sparkles, LogOut, Plus, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, LogOut, Plus, RefreshCw, CheckCircle2, AlertCircle, Bookmark } from 'lucide-react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { favorites, loading: favLoading, searchCandidates, addFavorite, deleteFavorite } = useFavorites();
+  const { bookmarks, isBookmarked, toggleBookmark } = useBookmarks();
 
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -89,9 +92,18 @@ export default function DashboardPage() {
     }
   };
 
+  const handleToggleBookmark = async (newsItem: any) => {
+    try {
+      const added = await toggleBookmark(newsItem);
+      showToast(added ? '「後で見る」リストに追加しました' : '「後で見る」リストから削除しました');
+    } catch (err: any) {
+      showToast(err.message || 'ブックマークの更新に失敗しました', 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* ナビゲーションバー (白基調) */}
+      {/* ナビゲーションバー */}
       <header className="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-40 shadow-xs">
         <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -106,6 +118,21 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* 「後で見る」リンク */}
+            <Link
+              href="/bookmarks"
+              className="bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs px-3.5 py-2.5 rounded-2xl transition-all flex items-center gap-1.5 border border-amber-200 shadow-2xs relative"
+              title="後で見るリストを開く"
+            >
+              <Bookmark className="w-3.5 h-3.5 fill-amber-500 text-amber-600" />
+              <span className="hidden sm:inline">後で見る</span>
+              {bookmarks.length > 0 && (
+                <span className="bg-amber-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  {bookmarks.length}
+                </span>
+              )}
+            </Link>
+
             {favorites.length > 0 && (
               <button
                 onClick={handleManualSync}
@@ -195,7 +222,12 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-5">
             {newsList.map((item) => (
-              <NewsCard key={item.id} news={item} />
+              <NewsCard
+                key={item.id}
+                news={item}
+                isBookmarked={isBookmarked(item.url)}
+                onToggleBookmark={() => handleToggleBookmark(item)}
+              />
             ))}
           </div>
         )}

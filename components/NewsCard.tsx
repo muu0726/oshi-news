@@ -1,13 +1,15 @@
 'use client';
 
-import { NewsItem } from '@/types/database';
-import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight, Video, Camera, AtSign, Bell } from 'lucide-react';
+import { NewsItem, BookmarkItem } from '@/types/database';
+import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight, Video, Camera, AtSign, Bell, Bookmark } from 'lucide-react';
 
 interface NewsCardProps {
-  news: NewsItem;
+  news: NewsItem | BookmarkItem;
+  isBookmarked?: boolean;
+  onToggleBookmark?: () => void;
 }
 
-export function NewsCard({ news }: NewsCardProps) {
+export function NewsCard({ news, isBookmarked = false, onToggleBookmark }: NewsCardProps) {
   const isSns = ['YouTube', 'X (Twitter)', 'Instagram'].some(s => (news.source || '').includes(s));
 
   // 3行要約・通知文を配列に分割
@@ -16,13 +18,13 @@ export function NewsCard({ news }: NewsCardProps) {
     .map((line) => line.replace(/^[・\-\*0-9\.]+\s*/, '').trim())
     .filter((line) => line.length > 0);
 
-  // 出典バッジの判定 (YouTube, X, Instagram, ニュース)
+  // 出典バッジの判定
   const renderSourceBadge = () => {
     const src = news.source || '';
 
     if (src.includes('YouTube')) {
       return (
-        <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 px-3 py-1 rounded-xl font-bold">
+        <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 px-3 py-1 rounded-xl font-bold text-xs">
           <Video className="w-3.5 h-3.5 text-rose-600" />
           <span>YouTube 公式更新</span>
         </div>
@@ -31,7 +33,7 @@ export function NewsCard({ news }: NewsCardProps) {
 
     if (src.includes('Instagram')) {
       return (
-        <div className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 px-3 py-1 rounded-xl font-bold">
+        <div className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 px-3 py-1 rounded-xl font-bold text-xs">
           <Camera className="w-3.5 h-3.5 text-pink-600" />
           <span>Instagram 公式更新</span>
         </div>
@@ -40,7 +42,7 @@ export function NewsCard({ news }: NewsCardProps) {
 
     if (src.includes('X') || src.includes('Twitter')) {
       return (
-        <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-xl font-bold">
+        <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-xl font-bold text-xs">
           <AtSign className="w-3.5 h-3.5 text-blue-400" />
           <span>X (Twitter) 公式更新</span>
         </div>
@@ -48,7 +50,7 @@ export function NewsCard({ news }: NewsCardProps) {
     }
 
     return (
-      <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-xl font-bold">
+      <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-xl font-bold text-xs">
         <Newspaper className="w-3.5 h-3.5 text-sky-600" />
         <span>{src || '主要ニュース'}</span>
       </div>
@@ -84,13 +86,31 @@ export function NewsCard({ news }: NewsCardProps) {
   return (
     <article className="pop-card-interactive rounded-[28px] p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
       <div>
-        {/* 出典 ＆ 日時 */}
+        {/* 出典 ＆ 日時 ＆ ブックマークボタン */}
         <div className="flex items-center justify-between text-xs mb-3.5">
           {renderSourceBadge()}
 
-          <div className="flex items-center gap-1.5 text-slate-400 font-medium">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span>{formatDate(news.published_at || news.created_at)}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>{formatDate(news.published_at || news.created_at)}</span>
+            </div>
+
+            {/* ブックマークボタン */}
+            {onToggleBookmark && (
+              <button
+                type="button"
+                onClick={onToggleBookmark}
+                className={`p-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                  isBookmarked
+                    ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
+                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-700'
+                }`}
+                title={isBookmarked ? '後で見るから削除' : '後で見るに保存'}
+              >
+                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-500 text-amber-600' : ''}`} />
+              </button>
+            )}
           </div>
         </div>
 

@@ -26,6 +26,18 @@ export interface NewsItem {
   created_at: string;
 }
 
+export interface BookmarkItem {
+  id: string;
+  user_id: string;
+  news_id?: string | null;
+  title: string;
+  url: string;
+  source: string | null;
+  summary: string;
+  published_at: string | null;
+  created_at: string;
+}
+
 export interface FavoriteCandidate {
   name: string;
   category_or_group: string;
