@@ -2,24 +2,53 @@ import { getGeminiClient } from '@/lib/gemini';
 import { FavoriteCandidate } from '@/types/database';
 import { Type } from '@google/genai';
 
+// Wikipedia Search API を用いたフォールバック候補生成関数
+async function fetchWikipediaFallbackCandidates(query: string): Promise<FavoriteCandidate[]> {
+  try {
+    const wikiUrl = `https://ja.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=6&namespace=0&format=json`;
+    const res = await fetch(wikiUrl);
+    if (!res.ok) throw new Error('Wikipedia Search API Request Failed');
+
+    const data = await res.json();
+    const names: string[] = Array.isArray(data[1]) ? data[1] : [];
+    const descriptions: string[] = Array.isArray(data[2]) ? data[2] : [];
+
+    if (names.length > 0) {
+      return names.map((name, i) => ({
+        name,
+        category_or_group: name.includes('46') || name.includes('48') || name.includes('坂') ? 'アイドルグループ / 芸能' : '著名人・有名人',
+        official_url: Array.isArray(data[3]) && data[3][i] ? data[3][i] : '',
+        social_accounts: {},
+        keywords: [name, query],
+        description: descriptions[i] && descriptions[i].length > 5 ? descriptions[i] : `「${name}」の最新ニュース・公式更新情報を収集します。`,
+      }));
+    }
+  } catch (err) {
+    console.warn('Wikipedia fallback search error:', err);
+  }
+
+  // 完全なフォールバック
+  return [
+    {
+      name: query,
+      category_or_group: '登録人物',
+      official_url: '',
+      social_accounts: {},
+      keywords: [query],
+      description: `「${query}」のニュースおよび公式更新を収集します。`,
+    },
+  ];
+}
+
 export async function identifyFavoriteCandidates(query: string): Promise<FavoriteCandidate[]> {
   const trimmed = query.trim();
   if (!trimmed) return [];
 
   const ai = getGeminiClient();
 
-  // APIキー未設定・動作不可時のフォールバック処理
+  // APIキー未設定の場合、Wikipedia API で候補検索
   if (!ai) {
-    return [
-      {
-        name: trimmed,
-        category_or_group: '一般 / その他',
-        official_url: '',
-        social_accounts: {},
-        keywords: [trimmed],
-        description: `「${trimmed}」として登録（※Gemini APIキー未設定のため直書き保存モード）`,
-      },
-    ];
+    return await fetchWikipediaFallbackCandidates(trimmed);
   }
 
   try {
@@ -71,7 +100,7 @@ export async function identifyFavoriteCandidates(query: string): Promise<Favorit
 
     const jsonText = response.text || '';
     const parsed = JSON.parse(jsonText);
-    if (parsed && Array.isArray(parsed.candidates)) {
+    if (parsed && Array.isArray(parsed.candidates) && parsed.candidates.length > 0) {
       return parsed.candidates.map((item: any) => ({
         name: item.name || trimmed,
         category_or_group: item.category_or_group || 'アーティスト/インフルエンサー',
@@ -86,18 +115,9 @@ export async function identifyFavoriteCandidates(query: string): Promise<Favorit
       }));
     }
   } catch (error) {
-    console.error('Failed to call Gemini API for favorite identification:', error);
+    console.error('Gemini API search failed or quota exceeded. Using Wikipedia fallback search:', error);
   }
 
-  // エラー時のフォールバック
-  return [
-    {
-      name: trimmed,
-      category_or_group: '登録人物',
-      official_url: '',
-      social_accounts: {},
-      keywords: [trimmed],
-      description: `「${trimmed}」のニュースおよび公式更新を収集します。`,
-    },
-  ];
+  // Quota エラー時や Gemini 失敗時は Wikipedia API で候補一覧を取得
+  return await fetchWikipediaFallbackCandidates(trimmed);
 }
