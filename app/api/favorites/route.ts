@@ -65,7 +65,7 @@ export async function POST(request: Request) {
   }
 }
 
-// DELETE: 指定した推し人物を削除
+// DELETE: 指定した推し人物を削除 (関連ニュースも併せて削除)
 export async function DELETE(request: Request) {
   try {
     const supabase = await createClient();
@@ -82,6 +82,13 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: '削除対象のIDが指定されていません' }, { status: 400 });
     }
 
+    // 1. 関連する集約ニュースを削除
+    await supabase
+      .from('news')
+      .delete()
+      .eq('favorite_id', id);
+
+    // 2. 推し人物を削除
     const { error } = await supabase
       .from('favorites')
       .delete()

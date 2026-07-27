@@ -13,6 +13,7 @@ export default function ManageFavoritesPage() {
   const { favorites, loading: favLoading, searchCandidates, addFavorite, deleteFavorite } = useFavorites();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmDeleteTarget, setConfirmDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -44,15 +45,15 @@ export default function ManageFavoritesPage() {
     showToast(`「${candidate.name}」を推しリストに追加しました！`);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`「${name}」を推しリストから削除してもよろしいですか？\n※関連する集約ニュースもすべて削除されます。`)) {
-      return;
-    }
+  const executeDelete = async () => {
+    if (!confirmDeleteTarget) return;
 
+    const { id, name } = confirmDeleteTarget;
     setDeletingId(id);
     try {
       await deleteFavorite(id);
       showToast(`「${name}」を推しリストから削除しました`);
+      setConfirmDeleteTarget(null);
     } catch (err: any) {
       showToast(err.message || '削除中にエラーが発生しました', 'error');
     } finally {
@@ -109,6 +110,48 @@ export default function ManageFavoritesPage() {
         </div>
       )}
 
+      {/* 削除確認モーダル */}
+      {confirmDeleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-sm bg-white border border-slate-200 rounded-[28px] p-6 shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 bg-rose-50 border border-rose-200 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-extrabold text-slate-900">推しリストから削除</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                「<span className="font-bold text-slate-800">{confirmDeleteTarget.name}</span>」を登録解除しますか？<br />
+                ※関連するニュースおよび設定も削除されます。
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteTarget(null)}
+                disabled={deletingId !== null}
+                className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={executeDelete}
+                disabled={deletingId !== null}
+                className="py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {deletingId ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <span>削除する</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* メインコンテンツ */}
       <main className="flex-1 max-w-4xl mx-auto px-4 py-6 w-full">
         {favorites.length === 0 ? (
@@ -147,57 +190,65 @@ export default function ManageFavoritesPage() {
                 className="bg-white border border-slate-200/90 rounded-[24px] p-5 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                        {fav.name}
-                      </h2>
-                      {fav.category_or_group && (
-                        <span className="text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                          {fav.category_or_group}
-                        </span>
-                      )}
-                    </div>
+                  <div className="flex items-start gap-3.5">
+                    {/* 顔写真 / アイコン画像 */}
+                    {fav.image_url ? (
+                      <img
+                        src={fav.image_url}
+                        alt={fav.name}
+                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-2xs shrink-0 mt-0.5"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-lg flex items-center justify-center shrink-0 shadow-2xs mt-0.5">
+                        {fav.name.substring(0, 1)}
+                      </div>
+                    )}
 
-                    {/* 公式SNS アカウントタグ */}
-                    {fav.social_accounts && (
-                      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
-                        {fav.social_accounts.x_handle && (
-                          <span className="inline-flex items-center gap-1 bg-slate-900 text-white px-2.5 py-0.5 rounded-md font-bold">
-                            <AtSign className="w-3.5 h-3.5 text-blue-400" />
-                            {fav.social_accounts.x_handle}
-                          </span>
-                        )}
-                        {fav.social_accounts.instagram_handle && (
-                          <span className="inline-flex items-center gap-1 bg-pink-50 text-pink-700 border border-pink-200 px-2.5 py-0.5 rounded-md font-bold">
-                            <Camera className="w-3.5 h-3.5 text-pink-600" />
-                            @{fav.social_accounts.instagram_handle.replace(/^@/, '')}
-                          </span>
-                        )}
-                        {fav.social_accounts.youtube_channel_id && (
-                          <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md font-bold">
-                            <Video className="w-3.5 h-3.5 text-rose-600" />
-                            YouTube公式
+                    <div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
+                          {fav.name}
+                        </h2>
+                        {fav.category_or_group && (
+                          <span className="text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200 px-2.5 py-0.5 rounded-full">
+                            {fav.category_or_group}
                           </span>
                         )}
                       </div>
-                    )}
+
+                      {/* 公式SNS アカウントタグ */}
+                      {fav.social_accounts && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          {fav.social_accounts.x_handle && (
+                            <span className="inline-flex items-center gap-1 bg-slate-900 text-white px-2.5 py-0.5 rounded-md font-bold text-[11px]">
+                              <AtSign className="w-3 h-3 text-blue-400" />
+                              {fav.social_accounts.x_handle}
+                            </span>
+                          )}
+                          {fav.social_accounts.instagram_handle && (
+                            <span className="inline-flex items-center gap-1 bg-pink-50 text-pink-700 border border-pink-200 px-2.5 py-0.5 rounded-md font-bold text-[11px]">
+                              <Camera className="w-3 h-3 text-pink-600" />
+                              @{fav.social_accounts.instagram_handle.replace(/^@/, '')}
+                            </span>
+                          )}
+                          {fav.social_accounts.youtube_channel_id && (
+                            <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-md font-bold text-[11px]">
+                              <Video className="w-3 h-3 text-rose-600" />
+                              YouTube公式
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* 削除ボタン */}
+                  {/* 削除確認モーダル起動ボタン */}
                   <button
-                    onClick={() => handleDelete(fav.id, fav.name)}
-                    disabled={deletingId === fav.id}
-                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold border border-rose-200 text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
+                    onClick={() => setConfirmDeleteTarget({ id: fav.id, name: fav.name })}
+                    className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold border border-rose-200 text-xs px-3.5 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
                   >
-                    {deletingId === fav.id ? (
-                      <div className="w-4 h-4 border-2 border-rose-600/30 border-t-rose-600 rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        <span>推しから外す</span>
-                      </>
-                    )}
+                    <Trash2 className="w-4 h-4" />
+                    <span>推しから外す</span>
                   </button>
                 </div>
 

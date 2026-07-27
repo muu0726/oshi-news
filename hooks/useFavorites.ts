@@ -27,11 +27,11 @@ export function useFavorites() {
     fetchFavorites();
   }, [fetchFavorites]);
 
-  const searchCandidates = async (query: string): Promise<FavoriteCandidate[]> => {
+  const searchCandidates = async (query: string, type: string = 'all'): Promise<FavoriteCandidate[]> => {
     const res = await fetch('/api/favorites/search', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, type }),
     });
 
     const data = await res.json();

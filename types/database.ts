@@ -8,8 +8,10 @@ export interface Favorite {
   id: string;
   user_id: string;
   name: string;
+  type?: 'person' | 'group' | string;
   category_or_group: string | null;
   official_url: string | null;
+  image_url?: string | null;
   social_accounts?: SocialAccounts | null;
   keywords: string[];
   created_at: string;
@@ -40,8 +42,10 @@ export interface BookmarkItem {
 
 export interface FavoriteCandidate {
   name: string;
+  type?: 'person' | 'group' | string;
   category_or_group: string;
   official_url?: string;
+  image_url?: string;
   social_accounts?: SocialAccounts;
   keywords: string[];
   description: string;

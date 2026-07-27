@@ -2,17 +2,18 @@
 
 import { useState } from 'react';
 import { FavoriteCandidate } from '@/types/database';
-import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle, Video, Camera, AtSign } from 'lucide-react';
+import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle, User, Users, Image as ImageIcon } from 'lucide-react';
 
 interface AddFavoriteModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSearch: (query: string) => Promise<FavoriteCandidate[]>;
+  onSearch: (query: string, type?: string) => Promise<FavoriteCandidate[]>;
   onAdd: (candidate: FavoriteCandidate) => Promise<void>;
 }
 
 export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavoriteModalProps) {
   const [query, setQuery] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'person' | 'group'>('all');
   const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState<FavoriteCandidate[] | null>(null);
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
@@ -29,7 +30,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
     setCandidates(null);
 
     try {
-      const results = await onSearch(query.trim());
+      const results = await onSearch(query.trim(), searchType);
       setCandidates(results);
     } catch (err: any) {
       setErrorMsg(err.message || '候補の同定に失敗しました');
@@ -64,8 +65,8 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900">推し人物 ＆ 公式SNSを追加</h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Gemini AI が公式X・Instagram・YouTubeを自動特定</p>
+              <h2 className="text-xl font-extrabold text-slate-900">推し人物 ＆ グループを追加</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">DBキャッシュ ＆ AI解析でアイコンと公式情報を即座に表示</p>
             </div>
           </div>
 
@@ -77,8 +78,41 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
           </button>
         </div>
 
-        {/* 検索フォーム */}
-        <form onSubmit={handleSearchSubmit} className="mt-6">
+        {/* 検索フォーム ＆ 個人/グループ選択ピル */}
+        <form onSubmit={handleSearchSubmit} className="mt-5 space-y-3">
+          {/* 種別切替タブ */}
+          <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-2xl text-xs font-bold w-fit">
+            <button
+              type="button"
+              onClick={() => setSearchType('all')}
+              className={`px-3 py-1.5 rounded-xl transition-all ${
+                searchType === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              すべて
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchType('person')}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                searchType === 'person' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              個人
+            </button>
+            <button
+              type="button"
+              onClick={() => setSearchType('group')}
+              className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1 ${
+                searchType === 'group' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              グループ
+            </button>
+          </div>
+
           <div className="flex items-center gap-2.5">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-3.5" />
@@ -86,7 +120,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="人物名・グループ名を入力 (例: 有村架純, HIKAKIN)"
+                placeholder={searchType === 'group' ? 'グループ名を入力 (例: 乃木坂46, イコラブ)' : '人物名・グループ名を入力 (例: 有村架純, HIKAKIN)'}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition-all font-medium"
               />
             </div>
@@ -100,7 +134,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
               ) : (
                 <>
                   <Sparkles className="w-4 h-4" />
-                  <span>AI候補検索</span>
+                  <span>高速候補検索</span>
                 </>
               )}
             </button>
@@ -116,115 +150,118 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
         )}
 
         {/* 検索中 / 候補表示 */}
-        <div className="mt-6 flex-1 overflow-y-auto pr-1 space-y-3 min-h-[180px]">
+        <div className="mt-5 flex-1 overflow-y-auto pr-1 space-y-3 min-h-[200px]">
           {searching && (
             <div className="py-12 text-center space-y-3">
               <div className="inline-flex p-4 bg-blue-50 text-blue-600 rounded-3xl mb-1">
                 <Sparkles className="w-8 h-8 animate-spin" />
               </div>
-              <p className="text-base font-bold text-slate-900">Gemini AI が人物 ＆ 公式SNSを特定中...</p>
-              <p className="text-xs text-slate-500 font-medium">公式X、Instagram、YouTubeチャンネルを調べています</p>
+              <p className="text-base font-bold text-slate-900">マスターDB ＆ アイコン画像を取得中...</p>
+              <p className="text-xs text-slate-500 font-medium">DBキャッシュとWikipedia画像から高速抽出しています</p>
             </div>
           )}
 
           {!searching && candidates && candidates.length === 0 && (
             <div className="py-12 text-center text-slate-500 text-sm font-medium">
-              該当する人物候補が見つかりませんでした。
+              該当する人物・グループ候補が見つかりませんでした。
             </div>
           )}
 
           {!searching && candidates && candidates.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-bold text-slate-500 px-1">
-                AIが特定した候補一覧 (公式SNS情報も含む):
+                特定された候補一覧 (画像付き・選択して登録):
               </p>
 
               {candidates.map((candidate, idx) => (
                 <div
                   key={idx}
-                  className="bg-slate-50 border border-slate-200 hover:border-blue-500 rounded-2xl p-4 sm:p-5 transition-all duration-200 group"
+                  className="bg-slate-50 border border-slate-200 hover:border-blue-500 rounded-2xl p-4 sm:p-5 transition-all duration-200 group flex items-start gap-3.5"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
-                          {candidate.name}
-                        </h3>
-                        <span className="text-[11px] font-bold bg-sky-100 text-sky-800 border border-sky-200 px-2.5 py-0.5 rounded-full">
-                          {candidate.category_or_group}
-                        </span>
+                  {/* 顔写真 / グループアイコン */}
+                  {candidate.image_url ? (
+                    <img
+                      src={candidate.image_url}
+                      alt={candidate.name}
+                      className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-2xs shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-extrabold text-xl flex items-center justify-center shrink-0 shadow-xs">
+                      {candidate.name.substring(0, 1)}
+                    </div>
+                  )}
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors">
+                            {candidate.name}
+                          </h3>
+                          
+                          {/* 種別バッジ (個人 / グループ) */}
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            candidate.type === 'group'
+                              ? 'bg-purple-100 text-purple-800 border-purple-200'
+                              : 'bg-blue-100 text-blue-800 border-blue-200'
+                          }`}>
+                            {candidate.type === 'group' ? 'グループ' : '個人'}
+                          </span>
+
+                          <span className="text-[11px] font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-md">
+                            {candidate.category_or_group}
+                          </span>
+                        </div>
+
+                        {candidate.description && (
+                          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium line-clamp-2">
+                            {candidate.description}
+                          </p>
+                        )}
                       </div>
 
-                      {candidate.description && (
-                        <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium line-clamp-2">
-                          {candidate.description}
-                        </p>
-                      )}
-
-                      {/* 公式SNS アカウント検出タグ */}
-                      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
-                        {candidate.social_accounts?.x_handle && (
-                          <span className="inline-flex items-center gap-1 bg-slate-900 text-white px-2 py-0.5 rounded-md font-bold">
-                            <AtSign className="w-3 h-3 text-blue-400" />
-                            {candidate.social_accounts.x_handle}
-                          </span>
-                        )}
-                        {candidate.social_accounts?.instagram_handle && (
-                          <span className="inline-flex items-center gap-1 bg-pink-100 text-pink-700 border border-pink-200 px-2 py-0.5 rounded-md font-bold">
-                            <Camera className="w-3 h-3 text-pink-600" />
-                            @{candidate.social_accounts.instagram_handle.replace(/^@/, '')}
-                          </span>
-                        )}
-                        {candidate.social_accounts?.youtube_channel_id && (
-                          <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md font-bold">
-                            <Video className="w-3 h-3 text-rose-600" />
-                            YouTube公式
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleSelectCandidate(candidate, idx)}
-                      disabled={addingIndex !== null}
-                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
-                    >
-                      {addingIndex === idx ? (
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <UserCheck className="w-3.5 h-3.5" />
-                          登録する
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* キーワードタグ ＆ 公式サイト */}
-                  <div className="mt-3.5 pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      {candidate.keywords.map((kw, kIdx) => (
-                        <span
-                          key={kIdx}
-                          className="bg-white text-slate-700 text-[10px] px-2.5 py-0.5 rounded-md font-bold border border-slate-200 shadow-2xs"
-                        >
-                          #{kw}
-                        </span>
-                      ))}
-                    </div>
-
-                    {candidate.official_url && (
-                      <a
-                        href={candidate.official_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[11px] text-slate-500 hover:text-blue-600 flex items-center gap-1 font-medium transition-colors"
+                      <button
+                        onClick={() => handleSelectCandidate(candidate, idx)}
+                        disabled={addingIndex !== null}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50 cursor-pointer"
                       >
-                        <Globe className="w-3.5 h-3.5 text-slate-400" />
-                        公式サイト
-                      </a>
-                    )}
+                        {addingIndex === idx ? (
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <UserCheck className="w-3.5 h-3.5" />
+                            登録する
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* タグ ＆ 公式サイト */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        {candidate.keywords.map((kw, kIdx) => (
+                          <span
+                            key={kIdx}
+                            className="bg-white text-slate-700 text-[10px] px-2 py-0.5 rounded-md font-bold border border-slate-200 shadow-2xs"
+                          >
+                            #{kw}
+                          </span>
+                        ))}
+                      </div>
+
+                      {candidate.official_url && (
+                        <a
+                          href={candidate.official_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-slate-500 hover:text-blue-600 flex items-center gap-1 font-medium transition-colors"
+                        >
+                          <Globe className="w-3.5 h-3.5 text-slate-400" />
+                          公式サイト
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
