@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { FavoriteCandidate } from '@/types/database';
-import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle } from 'lucide-react';
+import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle, Video, Camera, AtSign } from 'lucide-react';
 
 interface AddFavoriteModalProps {
   isOpen: boolean;
@@ -64,8 +64,8 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-extrabold text-slate-900">推し人物を追加</h2>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Gemini AI が同姓同名や表記揺れを高度分析・識別</p>
+              <h2 className="text-xl font-extrabold text-slate-900">推し人物 ＆ 公式SNSを追加</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Gemini AI が公式X・Instagram・YouTubeを自動特定</p>
             </div>
           </div>
 
@@ -122,8 +122,8 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
               <div className="inline-flex p-4 bg-blue-50 text-blue-600 rounded-3xl mb-1">
                 <Sparkles className="w-8 h-8 animate-spin" />
               </div>
-              <p className="text-base font-bold text-slate-900">Gemini AI が人物情報を分析中...</p>
-              <p className="text-xs text-slate-500 font-medium">同姓同名の識別キーワードと肩書を特定しています</p>
+              <p className="text-base font-bold text-slate-900">Gemini AI が人物 ＆ 公式SNSを特定中...</p>
+              <p className="text-xs text-slate-500 font-medium">公式X、Instagram、YouTubeチャンネルを調べています</p>
             </div>
           )}
 
@@ -136,7 +136,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
           {!searching && candidates && candidates.length > 0 && (
             <div className="space-y-3">
               <p className="text-xs font-bold text-slate-500 px-1">
-                AIが特定した候補一覧 (当てはまる人物を選択してください):
+                AIが特定した候補一覧 (公式SNS情報も含む):
               </p>
 
               {candidates.map((candidate, idx) => (
@@ -160,6 +160,28 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
                           {candidate.description}
                         </p>
                       )}
+
+                      {/* 公式SNS アカウント検出タグ */}
+                      <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[11px]">
+                        {candidate.social_accounts?.x_handle && (
+                          <span className="inline-flex items-center gap-1 bg-slate-900 text-white px-2 py-0.5 rounded-md font-bold">
+                            <AtSign className="w-3 h-3 text-blue-400" />
+                            {candidate.social_accounts.x_handle}
+                          </span>
+                        )}
+                        {candidate.social_accounts?.instagram_handle && (
+                          <span className="inline-flex items-center gap-1 bg-pink-100 text-pink-700 border border-pink-200 px-2 py-0.5 rounded-md font-bold">
+                            <Camera className="w-3 h-3 text-pink-600" />
+                            @{candidate.social_accounts.instagram_handle.replace(/^@/, '')}
+                          </span>
+                        )}
+                        {candidate.social_accounts?.youtube_channel_id && (
+                          <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-700 border border-rose-200 px-2 py-0.5 rounded-md font-bold">
+                            <Video className="w-3 h-3 text-rose-600" />
+                            YouTube公式
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <button
@@ -178,7 +200,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
                     </button>
                   </div>
 
-                  {/* メタデータタグ ＆ 公式HP */}
+                  {/* キーワードタグ ＆ 公式サイト */}
                   <div className="mt-3.5 pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />

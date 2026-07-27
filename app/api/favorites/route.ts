@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, category_or_group, official_url, keywords } = body;
+    const { name, category_or_group, official_url, social_accounts, keywords } = body;
 
     if (!name) {
       return NextResponse.json({ error: '名前は必須項目です' }, { status: 400 });
@@ -50,6 +50,7 @@ export async function POST(request: Request) {
         name,
         category_or_group: category_or_group || '',
         official_url: official_url || null,
+        social_accounts: social_accounts || {},
         keywords: Array.isArray(keywords) ? keywords : [name],
       })
       .select()

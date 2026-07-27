@@ -30,7 +30,7 @@
    │ ── name (Text) - 表示名
    │ ── category_or_group (Text) - 肩書・所属
    │ ── official_url (Text) - 公式HP/ブログ等 (任意)
-   │ ── social_accounts (JSONB) - 公式SNSハンドル/チャンネルID (Phase 6)
+   │ ── social_accounts (JSONB) - 公式SNSハンドル/チャンネルID
    │ ── keywords (Text[]) - ノイズカット・表記揺れキーワード
    │ ── created_at (Timestamp)
    │ 1
@@ -57,7 +57,7 @@
 | **Phase 3** | **メインダッシュボード & ニュースUI** | 動的タブ切替、ニュースカード表示（3行要約付き）、レスポンシブUI | **完了** |
 | **Phase 4** | **自動取得・AIパイプライン & Cron** | RSS/公式巡回、Gemini同姓同名判定＋3行要約、GitHub Actions毎朝バッチ | **完了** |
 | **Phase 5** | **Expo移植準備・テスト・最終検証** | 独立ロジックリファクタリング、テスト作成、セキュリティ/RLS確認 | **完了** |
-| **Phase 6** | **公式SNSアカウント連携 & AI要約** | YouTube/X/Instagramの公式投稿自動取得 ＆ AI3行サマリー | 未着手 |
+| **Phase 6** | **公式SNSアカウント連携 & AI要約** | YouTube/X/Instagramの公式投稿自動取得 ＆ AI3行サマリー | **完了** |
 
 ---
 
@@ -68,4 +68,4 @@
 - [x] **Phase 3:** [03_phase3_dashboard_ui.md](file:///c:/A_mainfile/SiteCode/%E6%8E%A8%E3%81%97%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%B9/task/03_phase3_dashboard_ui.md)
 - [x] **Phase 4:** [04_phase4_news_pipeline_cron.md](file:///c:/A_mainfile/SiteCode/%E6%8E%A8%E3%81%97%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%B9/task/04_phase4_news_pipeline_cron.md)
 - [x] **Phase 5:** [05_phase5_expo_readiness_and_testing.md](file:///c:/A_mainfile/SiteCode/%E6%8E%A8%E3%81%97%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%B9/task/05_phase5_expo_readiness_and_testing.md)
-- [ ] **Phase 6:** [06_phase6_sns_integration.md](file:///c:/A_mainfile/SiteCode/%E6%8E%A8%E3%81%97%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%B9/task/06_phase6_sns_integration.md)
+- [x] **Phase 6:** [06_phase6_sns_integration.md](file:///c:/A_mainfile/SiteCode/%E6%8E%A8%E3%81%97%E3%83%8B%E3%83%A5%E3%83%BC%E3%82%B9/task/06_phase6_sns_integration.md)

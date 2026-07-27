@@ -1,7 +1,7 @@
 'use client';
 
 import { NewsItem } from '@/types/database';
-import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight } from 'lucide-react';
+import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight, Video, Camera, AtSign } from 'lucide-react';
 
 interface NewsCardProps {
   news: NewsItem;
@@ -13,6 +13,45 @@ export function NewsCard({ news }: NewsCardProps) {
     .split('\n')
     .map((line) => line.replace(/^[・\-\*0-9\.]+\s*/, '').trim())
     .filter((line) => line.length > 0);
+
+  // 出典バッジの判定 (YouTube, X, Instagram, ニュース)
+  const renderSourceBadge = () => {
+    const src = news.source || '';
+
+    if (src.includes('YouTube')) {
+      return (
+        <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 px-3 py-1 rounded-xl font-bold">
+          <Video className="w-3.5 h-3.5 text-rose-600" />
+          <span>YouTube 公式</span>
+        </div>
+      );
+    }
+
+    if (src.includes('Instagram')) {
+      return (
+        <div className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 px-3 py-1 rounded-xl font-bold">
+          <Camera className="w-3.5 h-3.5 text-pink-600" />
+          <span>Instagram 公式</span>
+        </div>
+      );
+    }
+
+    if (src.includes('X') || src.includes('Twitter')) {
+      return (
+        <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-xl font-bold">
+          <AtSign className="w-3.5 h-3.5 text-blue-400" />
+          <span>X (Twitter) 公式</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-xl font-bold">
+        <Newspaper className="w-3.5 h-3.5 text-sky-600" />
+        <span>{src || '主要ニュース'}</span>
+      </div>
+    );
+  };
 
   // 発行・取得日時のフォーマット
   const formatDate = (dateStr: string | null) => {
@@ -36,10 +75,7 @@ export function NewsCard({ news }: NewsCardProps) {
       <div>
         {/* 出典 ＆ 日時 */}
         <div className="flex items-center justify-between text-xs mb-3.5">
-          <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-xl font-bold">
-            <Newspaper className="w-3.5 h-3.5 text-sky-600" />
-            <span>{news.source || '主要メディア'}</span>
-          </div>
+          {renderSourceBadge()}
 
           <div className="flex items-center gap-1.5 text-slate-400 font-medium">
             <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -47,14 +83,14 @@ export function NewsCard({ news }: NewsCardProps) {
           </div>
         </div>
 
-        {/* ニュースタイトル */}
+        {/* タイトル */}
         <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug tracking-tight">
           <a href={news.url} target="_blank" rel="noreferrer" className="focus:outline-none">
             {news.title}
           </a>
         </h3>
 
-        {/* AI 3行要約セクション (明るく見やすいカード) */}
+        {/* AI 3行要約セクション */}
         <div className="mt-4 p-4 sm:p-5 bg-blue-50/70 border border-blue-100 rounded-2xl relative">
           <div className="flex items-center justify-between mb-3">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold bg-white border border-blue-200 text-blue-700 px-3 py-1 rounded-full shadow-xs">
@@ -74,7 +110,7 @@ export function NewsCard({ news }: NewsCardProps) {
         </div>
       </div>
 
-      {/* 外部記事へのリンクボタン */}
+      {/* 外部投稿/記事へのリンクボタン */}
       <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end">
         <a
           href={news.url}
@@ -82,7 +118,7 @@ export function NewsCard({ news }: NewsCardProps) {
           rel="noreferrer"
           className="group/btn inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
         >
-          <span>元記事を読む</span>
+          <span>公式ページを見る</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
         </a>
       </div>
