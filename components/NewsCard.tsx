@@ -1,14 +1,16 @@
 'use client';
 
 import { NewsItem } from '@/types/database';
-import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight, Video, Camera, AtSign } from 'lucide-react';
+import { Sparkles, ExternalLink, Clock, Newspaper, ArrowRight, Video, Camera, AtSign, Bell } from 'lucide-react';
 
 interface NewsCardProps {
   news: NewsItem;
 }
 
 export function NewsCard({ news }: NewsCardProps) {
-  // 3行要約を配列に分割
+  const isSns = ['YouTube', 'X (Twitter)', 'Instagram'].some(s => (news.source || '').includes(s));
+
+  // 3行要約・通知文を配列に分割
   const summaryLines = (news.summary || '')
     .split('\n')
     .map((line) => line.replace(/^[・\-\*0-9\.]+\s*/, '').trim())
@@ -22,7 +24,7 @@ export function NewsCard({ news }: NewsCardProps) {
       return (
         <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-700 px-3 py-1 rounded-xl font-bold">
           <Video className="w-3.5 h-3.5 text-rose-600" />
-          <span>YouTube 公式</span>
+          <span>YouTube 公式更新</span>
         </div>
       );
     }
@@ -31,7 +33,7 @@ export function NewsCard({ news }: NewsCardProps) {
       return (
         <div className="flex items-center gap-1.5 bg-pink-50 border border-pink-200 text-pink-700 px-3 py-1 rounded-xl font-bold">
           <Camera className="w-3.5 h-3.5 text-pink-600" />
-          <span>Instagram 公式</span>
+          <span>Instagram 公式更新</span>
         </div>
       );
     }
@@ -40,7 +42,7 @@ export function NewsCard({ news }: NewsCardProps) {
       return (
         <div className="flex items-center gap-1.5 bg-slate-900 text-white px-3 py-1 rounded-xl font-bold">
           <AtSign className="w-3.5 h-3.5 text-blue-400" />
-          <span>X (Twitter) 公式</span>
+          <span>X (Twitter) 公式更新</span>
         </div>
       );
     }
@@ -51,6 +53,15 @@ export function NewsCard({ news }: NewsCardProps) {
         <span>{src || '主要ニュース'}</span>
       </div>
     );
+  };
+
+  // ボタンラベルの生成
+  const getButtonText = () => {
+    const src = news.source || '';
+    if (src.includes('YouTube')) return 'YouTubeで動画を見る';
+    if (src.includes('Instagram')) return '公式Instagramを開く';
+    if (src.includes('X') || src.includes('Twitter')) return '公式X (Twitter)を開く';
+    return '元記事を読む';
   };
 
   // 発行・取得日時のフォーマット
@@ -90,19 +101,23 @@ export function NewsCard({ news }: NewsCardProps) {
           </a>
         </h3>
 
-        {/* AI 3行要約セクション */}
-        <div className="mt-4 p-4 sm:p-5 bg-blue-50/70 border border-blue-100 rounded-2xl relative">
+        {/* 要約 / 通知案内ボックス */}
+        <div className={`mt-4 p-4 sm:p-5 rounded-2xl relative border ${
+          isSns ? 'bg-slate-50 border-slate-200' : 'bg-blue-50/70 border-blue-100'
+        }`}>
           <div className="flex items-center justify-between mb-3">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold bg-white border border-blue-200 text-blue-700 px-3 py-1 rounded-full shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-              <span>AI 3行要約</span>
+            <div className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full shadow-xs ${
+              isSns ? 'bg-white border border-slate-300 text-slate-700' : 'bg-white border border-blue-200 text-blue-700'
+            }`}>
+              {isSns ? <Bell className="w-3.5 h-3.5 text-blue-600" /> : <Sparkles className="w-3.5 h-3.5 text-blue-600" />}
+              <span>{isSns ? '✨ 公式アカウント更新通知' : '✨ AI 3行要約'}</span>
             </div>
           </div>
 
           <ul className="space-y-2 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
             {summaryLines.map((line, idx) => (
               <li key={idx} className="flex items-start gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-2" />
+                <span className={`w-2 h-2 rounded-full shrink-0 mt-2 ${isSns ? 'bg-slate-500' : 'bg-blue-600'}`} />
                 <span>{line}</span>
               </li>
             ))}
@@ -118,7 +133,7 @@ export function NewsCard({ news }: NewsCardProps) {
           rel="noreferrer"
           className="group/btn inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
         >
-          <span>公式ページを見る</span>
+          <span>{getButtonText()}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
         </a>
       </div>
