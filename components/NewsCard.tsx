@@ -86,31 +86,13 @@ export function NewsCard({ news, isBookmarked = false, onToggleBookmark }: NewsC
   return (
     <article className="pop-card-interactive rounded-[28px] p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
       <div>
-        {/* 出典 ＆ 日時 ＆ ブックマークボタン */}
+        {/* 出典 ＆ 日時 */}
         <div className="flex items-center justify-between text-xs mb-3.5">
           {renderSourceBadge()}
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 text-slate-400 font-medium">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
-              <span>{formatDate(news.published_at || news.created_at)}</span>
-            </div>
-
-            {/* ブックマークボタン */}
-            {onToggleBookmark && (
-              <button
-                type="button"
-                onClick={onToggleBookmark}
-                className={`p-2 rounded-xl transition-all duration-200 cursor-pointer ${
-                  isBookmarked
-                    ? 'bg-amber-100 text-amber-600 hover:bg-amber-200'
-                    : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-700'
-                }`}
-                title={isBookmarked ? '後で見るから削除' : '後で見るに保存'}
-              >
-                <Bookmark className={`w-4 h-4 ${isBookmarked ? 'fill-amber-500 text-amber-600' : ''}`} />
-              </button>
-            )}
+          <div className="flex items-center gap-1.5 text-slate-400 font-medium">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span>{formatDate(news.published_at || news.created_at)}</span>
           </div>
         </div>
 
@@ -145,8 +127,24 @@ export function NewsCard({ news, isBookmarked = false, onToggleBookmark }: NewsC
         </div>
       </div>
 
-      {/* 外部投稿/記事へのリンクボタン */}
-      <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end">
+      {/* アクションフッター (「後で見る」ボタン ＋ 「元記事を読む」ボタン) */}
+      <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+        {onToggleBookmark && (
+          <button
+            type="button"
+            onClick={onToggleBookmark}
+            className={`inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+              isBookmarked
+                ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200 shadow-xs'
+                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+            }`}
+            title={isBookmarked ? '「後で見る」から解除' : '「後で見る」に保存'}
+          >
+            <Bookmark className={`w-3.5 h-3.5 ${isBookmarked ? 'fill-amber-500 text-amber-600' : 'text-slate-500'}`} />
+            <span>{isBookmarked ? '保存済み' : '後で見る'}</span>
+          </button>
+        )}
+
         <a
           href={news.url}
           target="_blank"
