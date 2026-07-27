@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FavoriteCandidate } from '@/types/database';
-import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle, User, Users, Image as ImageIcon } from 'lucide-react';
+import { Search, Sparkles, X, UserCheck, Globe, Tag, AlertCircle, User, Users } from 'lucide-react';
 
 interface AddFavoriteModalProps {
   isOpen: boolean;
@@ -19,7 +19,26 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // モーダルが開くたびに検索入力と前回の結果をリセット
+  useEffect(() => {
+    if (isOpen) {
+      setQuery('');
+      setSearchType('all');
+      setSearching(false);
+      setCandidates(null);
+      setAddingIndex(null);
+      setErrorMsg(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    setQuery('');
+    setCandidates(null);
+    setErrorMsg(null);
+    onClose();
+  };
 
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +63,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
     setErrorMsg(null);
     try {
       await onAdd(candidate);
-      setQuery('');
-      setCandidates(null);
-      onClose();
+      handleClose();
     } catch (err: any) {
       setErrorMsg(err.message || '登録に失敗しました');
     } finally {
@@ -71,7 +88,7 @@ export function AddFavoriteModal({ isOpen, onClose, onSearch, onAdd }: AddFavori
           </div>
 
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2.5 rounded-2xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
