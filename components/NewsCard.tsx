@@ -32,44 +32,41 @@ export function NewsCard({ news }: NewsCardProps) {
   };
 
   return (
-    <article className="glass-panel-interactive rounded-[28px] p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
-      {/* 背景ホバー微細グラデーション */}
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 via-transparent to-purple-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
+    <article className="pop-card-interactive rounded-[28px] p-6 sm:p-7 relative overflow-hidden group flex flex-col justify-between">
       <div>
         {/* 出典 ＆ 日時 */}
-        <div className="flex items-center justify-between text-xs mb-4">
-          <div className="flex items-center gap-2 bg-slate-900/80 border border-white/10 text-slate-300 px-3 py-1.5 rounded-xl font-medium shadow-sm">
-            <Newspaper className="w-3.5 h-3.5 text-blue-400" />
+        <div className="flex items-center justify-between text-xs mb-3.5">
+          <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-xl font-bold">
+            <Newspaper className="w-3.5 h-3.5 text-sky-600" />
             <span>{news.source || '主要メディア'}</span>
           </div>
 
           <div className="flex items-center gap-1.5 text-slate-400 font-medium">
-            <Clock className="w-3.5 h-3.5 text-slate-500" />
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
             <span>{formatDate(news.published_at || news.created_at)}</span>
           </div>
         </div>
 
         {/* ニュースタイトル */}
-        <h3 className="text-lg sm:text-xl font-extrabold text-white group-hover:text-blue-300 transition-colors leading-snug tracking-tight">
+        <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-blue-600 transition-colors leading-snug tracking-tight">
           <a href={news.url} target="_blank" rel="noreferrer" className="focus:outline-none">
             {news.title}
           </a>
         </h3>
 
-        {/* AI 3行要約セクション (特製ハイライトボックス) */}
-        <div className="mt-5 p-4 sm:p-5 bg-[#0b101d]/90 border-l-4 border-l-blue-500 border border-white/5 rounded-2xl relative shadow-inner">
+        {/* AI 3行要約セクション (明るく見やすいカード) */}
+        <div className="mt-4 p-4 sm:p-5 bg-blue-50/70 border border-blue-100 rounded-2xl relative">
           <div className="flex items-center justify-between mb-3">
-            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-500/30 text-blue-300 px-3 py-1 rounded-full shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
-              <span>AI 3行サマリー</span>
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold bg-white border border-blue-200 text-blue-700 px-3 py-1 rounded-full shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+              <span>AI 3行要約</span>
             </div>
           </div>
 
-          <ul className="space-y-2.5 text-xs sm:text-sm text-slate-200 leading-relaxed font-normal">
+          <ul className="space-y-2 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
             {summaryLines.map((line, idx) => (
               <li key={idx} className="flex items-start gap-2.5">
-                <span className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-400 to-indigo-400 shrink-0 mt-2 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-2" />
                 <span>{line}</span>
               </li>
             ))}
@@ -78,12 +75,12 @@ export function NewsCard({ news }: NewsCardProps) {
       </div>
 
       {/* 外部記事へのリンクボタン */}
-      <div className="mt-6 pt-4 border-t border-white/5 flex justify-end">
+      <div className="mt-5 pt-4 border-t border-slate-100 flex justify-end">
         <a
           href={news.url}
           target="_blank"
           rel="noreferrer"
-          className="group/btn inline-flex items-center gap-2 text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-4 py-2.5 rounded-xl shadow-md shadow-blue-500/20 transition-all duration-300 cursor-pointer"
+          className="group/btn inline-flex items-center gap-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2.5 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
         >
           <span>元記事を読む</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
