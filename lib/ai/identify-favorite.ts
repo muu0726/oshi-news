@@ -1,6 +1,7 @@
 import { getGeminiClient } from '@/lib/gemini';
-import { FavoriteCandidate } from '@/types/database';
+import { FavoriteCandidate, SocialAccounts } from '@/types/database';
 import { createClient } from '@/lib/supabase/server';
+import { resolveOfficialSnsAccounts } from '@/lib/services/sns-resolver';
 import { Type } from '@google/genai';
 
 // Wikipedia PageImages API からサムネイル画像URLを取得するユーティリティ
@@ -24,7 +25,7 @@ async function fetchWikipediaThumbnail(title: string): Promise<string | undefine
   return undefined;
 }
 
-// Wikipedia Search API を用いた候補生成 ＋ サムネイル画像取得
+// Wikipedia Search API を用いた候補生成 ＋ サムネイル画像 ＆ SNS自動補完
 async function fetchWikipediaFallbackCandidates(query: string, searchType: string = 'all'): Promise<FavoriteCandidate[]> {
   try {
     const wikiUrl = `https://ja.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=6&namespace=0&format=json`;
@@ -47,6 +48,7 @@ async function fetchWikipediaFallbackCandidates(query: string, searchType: strin
         }
 
         const imageUrl = await fetchWikipediaThumbnail(name);
+        const snsAccounts = await resolveOfficialSnsAccounts(name);
 
         results.push({
           name,
@@ -54,7 +56,7 @@ async function fetchWikipediaFallbackCandidates(query: string, searchType: strin
           category_or_group: isGroup ? 'アイドルグループ / アーティスト' : '著名人・有名人',
           official_url: Array.isArray(data[3]) && data[3][i] ? data[3][i] : '',
           image_url: imageUrl || undefined,
-          social_accounts: {},
+          social_accounts: snsAccounts,
           keywords: [name, query],
           description: descriptions[i] && descriptions[i].length > 5 ? descriptions[i] : `「${name}」の最新ニュース・公式更新情報を収集します。`,
         });
@@ -65,20 +67,22 @@ async function fetchWikipediaFallbackCandidates(query: string, searchType: strin
     console.warn('Wikipedia fallback search error:', err);
   }
 
+  const fallbackSns = await resolveOfficialSnsAccounts(query);
+
   return [
     {
       name: query,
       type: searchType === 'group' ? 'group' : 'person',
       category_or_group: '登録人物',
       official_url: '',
-      social_accounts: {},
+      social_accounts: fallbackSns,
       keywords: [query],
       description: `「${query}」のニュースおよび公式更新を収集します。`,
     },
   ];
 }
 
-// Supabase の master_favorites キャッシュを保存・取得
+// Supabase の master_favorites DB キャッシュを保存・更新
 async function saveCandidatesToMasterDb(candidates: FavoriteCandidate[]) {
   try {
     const supabase = await createClient();
@@ -107,7 +111,7 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
   if (!trimmed) return [];
 
   // -------------------------------------------------------------
-  // STEP 1: Supabase master_favorites DB キャッシュを最優先検索 (API消費 0 回)
+  // STEP 1: Supabase master_favorites DB キャッシュを最優先検索
   // -------------------------------------------------------------
   try {
     const supabase = await createClient();
@@ -124,24 +128,36 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
     const { data: dbCandidates } = await dbQuery;
 
     if (dbCandidates && dbCandidates.length > 0) {
-      console.log(`[Cache HIT] Returned ${dbCandidates.length} candidates from master_favorites DB for query "${trimmed}" (Zero API consumption)`);
-      return dbCandidates.map((item: any) => ({
-        name: item.name,
-        type: item.type || 'person',
-        category_or_group: item.category_or_group || '登録済みマスター',
-        official_url: item.official_url || '',
-        image_url: item.image_url || undefined,
-        social_accounts: item.social_accounts || {},
-        keywords: item.keywords || [item.name],
-        description: item.description || '',
-      }));
+      console.log(`[Cache HIT] Returned ${dbCandidates.length} candidates from master_favorites DB for query "${trimmed}"`);
+
+      // SNS アカウントが不足している場合は非同期で最新解決
+      const enriched = await Promise.all(
+        dbCandidates.map(async (item: any) => {
+          let sns: SocialAccounts = item.social_accounts || {};
+          if (!sns.x_handle && !sns.instagram_handle && !sns.youtube_channel_id) {
+            sns = await resolveOfficialSnsAccounts(item.name);
+          }
+          return {
+            name: item.name,
+            type: item.type || 'person',
+            category_or_group: item.category_or_group || '登録済みマスター',
+            official_url: item.official_url || '',
+            image_url: item.image_url || undefined,
+            social_accounts: sns,
+            keywords: item.keywords || [item.name],
+            description: item.description || '',
+          };
+        })
+      );
+
+      return enriched;
     }
   } catch (dbErr) {
     console.warn('Master DB search error:', dbErr);
   }
 
   // -------------------------------------------------------------
-  // STEP 2: Gemini API / Wikipedia API 検索 ＋ キャッシュ更新
+  // STEP 2: Gemini API / Wikipedia API 検索 ＋ SNS自動補完
   // -------------------------------------------------------------
   const ai = getGeminiClient();
 
@@ -155,13 +171,9 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
     const prompt = `ユーザーが追っかけたい「推し」の検索キーワードとして「${trimmed}」と入力しました。 (希望種別: ${searchType})
 
 【指示】
-検索文字列「${trimmed}」は完全一致の名前だけでなく、以下の可能性があります：
-- **苗字のみ・名前のみ** (例: 「有村」➔ 有村架純, 有村藍里 など)
-- **愛称・ひらがな・カタカナ・アルファベットの表記揺れ** (例: 「ひかきん」➔ HIKAKIN, 「あの」➔ あの / ano など)
-- **グループの略称・関連メンバー** (例: 「乃木坂」➔ 乃木坂46 など)
-
-探している可能性の高い実在の有名人、芸能人、アイドル、インフルエンサー、VTuber、グループ候補を【最大5件】特定し、以下のJSON形式で返却してください。
-種別 (type) は人物なら "person"、グループなら "group" と指定してください。`;
+検索文字列「${trimmed}」は完全一致の名前だけでなく、苗字のみ、愛称、表記揺れ、グループの関連メンバーの可能性があります。
+実在の有名人、芸能人、アイドル、インフルエンサー、VTuber、グループ候補を【最大5件】特定し、以下のJSON形式で返却してください。
+知られている公式X (@handle)、公式Instagram (ユーザー名)、公式YouTubeチャンネルID (UC...) も必ず特定して記述してください。`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -210,17 +222,25 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
         }
 
         const imageUrl = await fetchWikipediaThumbnail(item.name);
+        
+        let snsAccounts: SocialAccounts = {
+          x_handle: item.x_handle || null,
+          instagram_handle: item.instagram_handle || null,
+          youtube_channel_id: item.youtube_channel_id || null,
+        };
+
+        // SNS アカウントが不足している場合は Wikidata から自動解決
+        if (!snsAccounts.x_handle && !snsAccounts.instagram_handle && !snsAccounts.youtube_channel_id) {
+          snsAccounts = await resolveOfficialSnsAccounts(item.name);
+        }
+
         candidates.push({
           name: item.name || trimmed,
           type: item.type === 'group' ? 'group' : 'person',
           category_or_group: item.category_or_group || 'アーティスト/インフルエンサー',
           official_url: item.official_url || '',
           image_url: imageUrl || undefined,
-          social_accounts: {
-            x_handle: item.x_handle || null,
-            instagram_handle: item.instagram_handle || null,
-            youtube_channel_id: item.youtube_channel_id || null,
-          },
+          social_accounts: snsAccounts,
           keywords: Array.isArray(item.keywords) && item.keywords.length > 0 ? item.keywords : [trimmed],
           description: item.description || '',
         });
