@@ -16,13 +16,20 @@ async function handleCronJob(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const authHeader = request.headers.get('authorization');
-    const secret = process.env.CRON_SECRET || 'dev-secret';
+    const secret = process.env.CRON_SECRET;
 
-    // 認証チェック (Cron シークレットヘッダーまたは開発環境のフォールバック)
+    // 本番環境で CRON_SECRET が未設定の場合、安全のため即座に拒否
+    if (process.env.NODE_ENV === 'production' && !secret) {
+      console.error('CRON_SECRET is not configured in production environment.');
+      return NextResponse.json({ error: 'サーバー設定エラー: CRON_SECRET が未設定です' }, { status: 500 });
+    }
+
+    const expectedSecret = secret || 'dev-secret';
+
+    // 認証チェック (Cron シークレットヘッダーまたはパラメータ)
     const isAuthorized =
-      authHeader === `Bearer ${secret}` ||
-      searchParams.get('secret') === secret ||
-      process.env.NODE_ENV === 'development';
+      authHeader === `Bearer ${expectedSecret}` ||
+      searchParams.get('secret') === expectedSecret;
 
     if (!isAuthorized) {
       return NextResponse.json({ error: '認証エラー: 無効な Cron シークレットです' }, { status: 401 });
@@ -50,6 +57,7 @@ async function handleCronJob(request: Request) {
 
     if (!favorites || favorites.length === 0) {
       return NextResponse.json({
+        success: true,
         message: '登録されている推し人物が存在しませんでした',
         totalFavorites: 0,
         totalAdded: 0,

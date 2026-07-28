@@ -10,6 +10,15 @@ export interface RawNewsArticle {
 
 const parser = new Parser();
 
+function isSafeUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchRawNewsForFavorite(
   name: string,
   keywords: string[] = [],
@@ -30,6 +39,7 @@ export async function fetchRawNewsForFavorite(
     if (feed && feed.items) {
       for (const item of feed.items) {
         if (!item.title || !item.link) continue;
+        if (!isSafeUrl(item.link)) continue;
         if (seenUrls.has(item.link)) continue;
 
         // 出典メディア名の分離 (例: "タイトル - 出典メディア名")
@@ -57,7 +67,7 @@ export async function fetchRawNewsForFavorite(
   }
 
   // 2. 公式HP / 事務所サイトからの簡易スクレイピング (Jina Reader 連携)
-  if (officialUrl) {
+  if (officialUrl && isSafeUrl(officialUrl)) {
     try {
       const jinaUrl = `https://r.jina.ai/${officialUrl}`;
       const res = await fetch(jinaUrl, { headers: { 'Accept': 'text/plain' } });

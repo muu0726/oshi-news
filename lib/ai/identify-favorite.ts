@@ -110,6 +110,9 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
   const trimmed = query.trim();
   if (!trimmed) return [];
 
+  // ILIKE 特殊文字のエスケープ処理
+  const escapedQuery = trimmed.replace(/[%_\\]/g, '\\$&');
+
   // -------------------------------------------------------------
   // STEP 1: Supabase master_favorites DB キャッシュを最優先検索
   // -------------------------------------------------------------
@@ -118,7 +121,7 @@ export async function identifyFavoriteCandidates(query: string, searchType: stri
     let dbQuery = supabase
       .from('master_favorites')
       .select('*')
-      .or(`name.ilike.%${trimmed}%,description.ilike.%${trimmed}%`)
+      .or(`name.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`)
       .limit(5);
 
     if (searchType !== 'all') {
